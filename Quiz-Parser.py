@@ -2,6 +2,11 @@ import sys
 import re
 import os
 
+# ===== STATIC VARIABLE ===== #
+KEY_AFTER_QUESTION = '$$$~~***'
+KEY_AFTER_ANSWER = '***~~$$$'
+ERROR_LIST = []
+
 # ========================= Banner ========================= #
 BANNER = r'''=============================================================================
   ___        _          ____                            |
@@ -13,15 +18,10 @@ BANNER = r'''===================================================================
 =============================================================================
 ''' # $figlet Quiz-Parser
 
-
-# ===== KEY_FOR_PARSING ===== #
-KEY_AFTER_QUESTION = '$$$~~***'
-KEY_AFTER_ANSWER = '***~~$$$'
-ERROR_LIST = []
-
 HELP = fr'''- Usage: python {sys.argv[0]} <Raw_Question>
 * Export note: Custom on the left must be {KEY_AFTER_QUESTION} and the right custom is {KEY_AFTER_ANSWER}.
 '''
+
 # ====================== Output section ====================== #
 def is_file_exist(file):
     try:
@@ -30,10 +30,10 @@ def is_file_exist(file):
     except:
         return False
 
-def read_file_question(file):
-    if not is_file_exist(file):
-        exit(f'[-] File {file}')
-    raw_text = open(file, 'r', encoding='utf8').read()
+def read_file_question(file_name):
+    if is_file_exist(file_name):
+        exit(f'[-] File {file_name} not found!')
+    raw_text = open(file_name, 'r', encoding='utf8').read()
     return raw_text
 
 # KEY SECTION #
@@ -57,6 +57,13 @@ def write_key(list_key):
     file = open(key_file, 'a', encoding='utf8')
     for position in list_key:
         file.write(position+'\n')
+
+# !!!!!!!!!!!!!!!!!!!!!! If not in used, will remove it !!!!!!!!!!!!!!!!!!!!!! #
+def output_error_key(list_questions, list_answers):
+    error_file_name = 'ERROR.txt'
+    file = open(error_file_name, 'w', encoding='UTF-8')
+    for position in range(len(list_questions)):
+        file.write(list_questions[position]+'|'+list_answers[position])
 
 # ==================== Checking & Parsing ==================== #
 # === This section is child === #
@@ -118,8 +125,8 @@ def parse_qa(raw_text):
     return list_questions, list_answers
 
 # # ==== Main Section Parsing ==== #
-def parse_raw_text(file):
-    raw_text = read_file_question(file)
+def parse_raw_text(file_name):
+    raw_text = read_file_question(file_name)
     raw_text = re.sub(r'[\n]{2,}', '\n', raw_text)
     list_questions, list_answers = parse_qa(raw_text)
     return list_questions, list_answers
@@ -134,11 +141,25 @@ def type1(question, answer, list_key):
     return key
 
 # # Type 2: Q&A, selection choice
-# def type2():
-#
+def type2(question, answer, list_key):
+    main_question = re.sub(r'\n[a-gA-G][ .)/]{1,}.*', '', question).replace('\n', ' ')
+    list_question = []
+    list_answer = []
+    keys = []
+    getAnswer = re.findall('\w', answer, re.I)
+    for choice in getAnswer:
+        getAnswerInQuestion = re.search(choice + r'[. ]{1,}(.+?)[\n]|' + choice + '[. ]{1,}(.+?)$', question, re.I)
+        for arguments in getAnswerInQuestion.groups():
+            if arguments != None:
+                list_question.append(main_question)
+                list_answer.append(arguments)
+                key = combine_to_key(main_question, arguments, list_key)
+                keys.append(key)
+    return keys # This will return a list of key
+
 # # Type 3: Wrong position, so swap them
-# def type3():
-#
+def type3():
+    pass
 # # Type 4: True/False type
 # def type4():
 
@@ -159,15 +180,18 @@ def select_type(file_name):
         if numberic_type == 1:
             key = type1(list_questions[i], list_answers[i], list_key)
         elif numberic_type == 2:
-            pass
+            key = type2(list_questions[i], list_answers[i], list_key)
         elif numberic_type == 3:
-            pass
+            type3()
         elif numberic_type == 4:
             pass
         else:
             ERROR_LIST.append(list_questions[i]+'|'+list_answers[i])
         # Check if not duplicated
         if not key == '':
+            # This need the algorithm to append key or list key
+            # Need to make the STATIC_KEYS = [] and LIST_KEYS = []
+            # STATIC_KEYS FOR COMPARATION, LIST_KEYS TO APPEND INTO FILE  ============ IMPORTANT =============
             list_key.append(key)
 
 
@@ -182,4 +206,4 @@ if __name__ == '__main__':
                   f'=============================================================================')
         exit(HELP)
     file = 'raw_qa.txt'
-    # select_type(file)
+    select_type(file)
