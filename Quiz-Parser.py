@@ -3,22 +3,25 @@ import re
 import os
 
 # ========================= Banner ========================= #
-BANNER = r'''
-===============================================================================
+BANNER = r'''=============================================================================
   ___        _          ____                            |
  / _ \ _   _(_)____    |  _ \ __ _ _ __ ___  ___ _ __   |
 | | | | | | | |_  /____| |_) / _` | '__/ __|/ _ \ '__|  |   
 | |_| | |_| | |/ /_____|  __/ (_| | |  \__ \  __/ |     |
  \__\_\\__,_|_/___|    |_|   \__,_|_|  |___/\___|_|     |   Verion: 2
                                                         |   Made by 7heKnight
-===============================================================================
+=============================================================================
 ''' # $figlet Quiz-Parser
+
 
 # ===== KEY_FOR_PARSING ===== #
 KEY_AFTER_QUESTION = '$$$~~***'
 KEY_AFTER_ANSWER = '***~~$$$'
 ERROR_LIST = []
 
+HELP = fr'''- Usage: python {sys.argv[0]} <Raw_Question>
+* Export note: Custom on the left must be {KEY_AFTER_QUESTION} and the right custom is {KEY_AFTER_ANSWER}.
+'''
 # ====================== Output section ====================== #
 def is_file_exist(file):
     try:
@@ -74,7 +77,7 @@ def parse_question(question):
     parsing = re.sub(r'^[ ~:]{1,99}', '', parsing)
     parsing = re.sub(r'^[0-9]{1,3}[)]{1}[ ]{1}', '', parsing)
     parsing = re.sub(r'^[0-9]{1,4}[/. ]{1,3}', '', parsing)
-    parsing = re.sub(r'^[A-Z]{1,3}[=]{1,2}[0-9]{1,4}[ ]{0,1}', '', parsing)
+    parsing = re.sub(r'r[A-Z]{1,3}[=]{1,2}[0-9]{1,4}[ ]{0,1}', '', parsing)
     parsing = re.sub(r'^[(]{1}[0-9]{1,9}[)]{1}[ ]{1}', '', parsing)
     parsing = re.sub(r'^[aA_ ]{1,}', '', parsing)
     parsing = re.sub(r'Select one or more', '', parsing,re.I)
@@ -170,8 +173,13 @@ def select_type(file_name):
 
 # ============================ Main =========================== #
 if __name__ == '__main__':
+    os.system('cls')
     print(BANNER)
-    sys.exit('Just test the release version, this program has not done yet')
-    #select_type(file)
-    # if len(sys.argv) != 2:
-    #     exit('[-] You are missing input file_name or out of range.')
+    if len(sys.argv) != 2 or re.search(r'help', str(sys.argv), re.I) != None or \
+            re.search(r'[-]{1,2}', str(sys.argv), re.I) != None or is_file_exist(sys.argv[1]) == False:
+        if is_file_exist(sys.argv[1]) == False and not ('help' in str(sys.argv) or '-h' in str(sys.argv)):
+            print(f'[-] File "{sys.argv[1]}" not found!\n\n'
+                  f'=============================================================================')
+        exit(HELP)
+    file = 'raw_qa.txt'
+    # select_type(file)
