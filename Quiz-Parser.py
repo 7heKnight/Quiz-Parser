@@ -33,7 +33,7 @@ def is_file_exist(file):
         return False
 
 def read_file_question(file_name):
-    if is_file_exist(file_name):
+    if not is_file_exist(file_name):
         exit(f'[-] File {file_name} not found!')
     raw_text = open(file_name, 'r', encoding='utf8').read()
     return raw_text
@@ -237,5 +237,4 @@ if __name__ == '__main__':
     os.system('cls')
     print(BANNER)
     check_input_from_command()
-    file = 'raw_qa.txt'
-    select_type(file)
+    select_type(sys.argv[1])
