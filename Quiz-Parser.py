@@ -15,7 +15,7 @@ BANNER = r'''===================================================================
  / _ \ _   _(_)____    |  _ \ __ _ _ __ ___  ___ _ __   |
 | | | | | | | |_  /____| |_) / _` | '__/ __|/ _ \ '__|  |   
 | |_| | |_| | |/ /_____|  __/ (_| | |  \__ \  __/ |     |
- \__\_\\__,_|_/___|    |_|   \__,_|_|  |___/\___|_|     |   Verion: 2
+ \__\_\\__,_|_/___|    |_|   \__,_|_|  |___/\___|_|     |   Version: 2
                                                         |   Made by 7heKnight
 =============================================================================
 ''' # $figlet Quiz-Parser
@@ -149,7 +149,7 @@ def type2(question, answer, LIST_KEY):
     keys = []
     getAnswer = re.findall('\w', answer, re.I)
     for choice in getAnswer:
-        getAnswerInQuestion = re.search(choice + r'[. ]{1,}(.+?)[\n]|' + choice + '[. ]{1,}(.+?)$', question, re.I)
+        getAnswerInQuestion = re.search(choice + r'[. )/\\]{1,}(.+?)[\n]|' + choice + r'[. )/\\]{1,}(.+?)$', question, re.I)
         for arguments in getAnswerInQuestion.groups():
             if arguments != None:
                 list_question.append(main_question)
@@ -160,8 +160,12 @@ def type2(question, answer, LIST_KEY):
 
 # Type 3: Wrong position, so swap them
 def type3(question, answer, LIST_KEY):
-    keys = type2(answer,question,LIST_KEY)
-    return keys
+    try:
+        keys = type2(answer,question,LIST_KEY)
+        return keys
+    except:
+        print(question)
+        print(answer)
 # Type 4: True/False type
 def type4(question, answer, LIST_KEY):
     if re.match('true|false', answer, re.I) == None:
