@@ -81,26 +81,10 @@ if __name__ == '__main__':
     reformat_keys = list(dict.fromkeys(reformat_keys))
     reformat_keys.sort(reverse=True)
     print('[+] Sorted lines in descending.')
-    # count = 0
     if wrong_format:
         count, file_dir = write_keys(reformat_keys, error_list)
-        # with open('key.txt', 'w', encoding='UTF8') as write_file:
-        #     file_dir = write_file.name
-        #     for i in reformat_keys:
-        #         if i and i not in error_list:
-        #             count += 1
-        #             write_file.write(f'{i}\n')
-        #     write_file.close()
     else:
-        count, file_dir = write_keys(reformat_keys, error_list)
-        # with open('key.txt', 'w', encoding='UTF8') as write_file:
-        #     file_dir = write_file.name
-        #     for i in reformat_keys:
-        #         count += 1
-        #         if i != reformat_keys[len(reformat_keys) - 1]:
-        #             write_file.write(f'{i}\n')
-        #         else:
-        #             write_file.write(f'{i}')
+        count, file_dir = write_keys(reformat_keys, error_list)(f'{i}')
         #     write_file.close()
     print(f'[+] Wrote {count} keys into: {file_dir}')
     print('-----------------------------------------')
