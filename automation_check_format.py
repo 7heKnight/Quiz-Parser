@@ -4,12 +4,12 @@ import re
 
 
 class RegEx:
-    A_AN = r'[aAsn() ]+ '
-    THE = r'[tThe ]+ '
     S_CHARS = r'[!"#$%&\'()*+,\-./:;<=>?@\[\]^_`{|}~ ]+'
-    NEW_LINE = r'[\r\n]+'
     DOUBLE_SPACE = r'[ ]{2,}'
     SELECT = r'\([sS][^)]+\)'
+    A_AN = r'[aAsn() ]+ '
+    NEW_LINE = r'[\r\n]+'
+    THE = r'[tThe ]+ '
 
 
 def remove_unwanted_char(list_qa: str):
