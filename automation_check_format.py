@@ -3,17 +3,26 @@
 import re
 
 
+class RegEx:
+    A_AN = r'[aAsn() ]+ '
+    THE = r'[tThe ]+ '
+    S_CHARS = r'[!"#$%&\'()*+,\-./:;<=>?@\[\]^_`{|}~ ]+'
+    NEW_LINE = r'[\r\n]+'
+    DOUBLE_SPACE = r'[ ]{2,}'
+    SELECT = r'\([sS][^)]+\)'
+
+
 def remove_unwanted_char(list_qa: str):
-    list_qa = re.sub(r'^[aAsn() ]+ |'
-                     r'^[tThe ]+ |'
-                     r'^[!"#$%&\'()*+,\-./:;<=>?@\[\]^_`{|}~ ]+', '', list_qa)
-    list_qa = re.sub(r'[\r\n]+[aAn() ]+ |'
-                     r'[\r\n]+[tThe ]+ |'
-                     r'[\r\n]+[!"#$%&\'()*+,\-./:;<=>?@\[\]^_`{|}~ ]+', '\n', list_qa)
+    list_qa = re.sub(r'^' + RegEx.THE, '', list_qa)
+    list_qa = re.sub(r'^' + RegEx.A_AN, '', list_qa)
+    list_qa = re.sub(r'^' + RegEx.S_CHARS, '', list_qa)
+    list_qa = re.sub(RegEx.NEW_LINE + RegEx.THE, '\n', list_qa)
+    list_qa = re.sub(RegEx.NEW_LINE + RegEx.A_AN, '\n', list_qa)
+    list_qa = re.sub(RegEx.NEW_LINE + RegEx.S_CHARS, '\n', list_qa)
     list_qa = re.sub(r'[ ?.]+\|', '|', list_qa)
-    list_qa = re.sub(r'\([sS]el[^|]+\|', '|', list_qa)
-    list_qa = re.sub(r'[!"#$%&\'()*+,\-./:;<=>?@\[\]^_`{|}~ ]+$', '', list_qa)
-    list_qa = re.sub(r'[ ]{2,}', ' ', list_qa)
+    list_qa = re.sub(r'\([sS]e[^|]+\|', '|', list_qa)
+    list_qa = re.sub(RegEx.S_CHARS + r'$', '', list_qa)
+    list_qa = re.sub(RegEx.DOUBLE_SPACE, ' ', list_qa)
     return list_qa
 
 
@@ -85,7 +94,6 @@ if __name__ == '__main__':
         count, file_dir = write_keys(reformat_keys, error_list)
     else:
         count, file_dir = write_keys(reformat_keys, error_list)(f'{i}')
-        #     write_file.close()
     print(f'[+] Wrote {count} keys into: {file_dir}')
     print('-----------------------------------------')
     print('Program executed successfully!')
