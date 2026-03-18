@@ -1,5 +1,8 @@
-import requests
+import sys
 import re
+import requests
+from random import randint
+from time import sleep
 
 
 def get_all_links():
@@ -26,10 +29,9 @@ def get_question(item: str):
         question = re.sub(r'[._? ]+$', '', question)
         question = re.sub(r'[ ]{2,}', ' ', question)
         return question
-    except:
-        print(f'[-] {item}')
-        from sys import exit
-        exit(0)
+    except Exception as e:
+        print(f'[-] Failed to parse question: {e}')
+        sys.exit(1)
 
 
 def get_answer(item: str):
@@ -37,10 +39,9 @@ def get_answer(item: str):
         answer = re.search(r'\w$', item).group(0)
         final_answer = re.search(fr'{answer}\) (.+?)<br', item).group(1)
         return final_answer
-    except:
-        print(f'[-] {item}')
-        from sys import exit
-        exit(0)
+    except Exception as e:
+        print(f'[-] Failed to parse answer: {e}')
+        sys.exit(1)
 
 
 def get_question_answer(html: str, final_key: list):
@@ -58,28 +59,22 @@ def get_html(url: str):
 
 
 def write_key(list_key: list):
-    with open('san_key.txt', 'w') as file:
+    with open('san_key.txt', 'w') as f:
         for key in list_key:
-            file.write(key+'\n')
+            f.write(key + '\n')
     print('[+] Wrote keys into: "san_key.txt"')
-    file.close()
 
 
 if __name__ == '__main__':
     list_links = get_all_links()
     list_key = []
-    # print(source)
     for link in list_links:
         print(f'[*] Crawling on: {link}', end='')
         source = get_html(link)
         get_question_answer(source, list_key)
         print(' - Done')
-        from random import randint
-        from time import sleep
         sleep(0.1 * randint(1, 5))
     print(f'[+] We got {len(list_key)} keys from sanfoundry.')
     write_key(list_key)
     print('[+] Program executed successfully!')
-    from sys import exit
-    exit(0)
 
