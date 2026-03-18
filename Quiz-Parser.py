@@ -1,224 +1,312 @@
+import time
 import sys
 import re
 import os
 
-# ===== STATIC VARIABLE ===== #
-KEY_AFTER_QUESTION = '$$$~~***'
-KEY_AFTER_ANSWER = '***~~$$$'
-KEY_FILE = 'key.txt'
-ERROR_LIST = []
+SPLITQUESTION = '"~~"'
+SPLITQA = '"**"'
 
-# ========================= Banner ========================= #
-BANNER = r'''=============================================================================
+BANNER = r'''
+===============================================================================
   ___        _          ____                            |
  / _ \ _   _(_)____    |  _ \ __ _ _ __ ___  ___ _ __   |
-| | | | | | | |_  /____| |_) / _` | '__/ __|/ _ \ '__|  |   
+| | | | | | | |_  /____| |_) / _` | '__/ __|/ _ \ '__|  |
 | |_| | |_| | |/ /_____|  __/ (_| | |  \__ \  __/ |     |
- \__\_\\__,_|_/___|    |_|   \__,_|_|  |___/\___|_|     |   Version: 2
+ \__\_\\__,_|_/___|    |_|   \__,_|_|  |___/\___|_|     |   Version: 1
                                                         |   Made by 7heKnight
-=============================================================================
-''' # $figlet Quiz-Parser
-
-HELP = fr'''- Usage: python {sys.argv[0]} <Raw_Question file>
-* Export note: Custom on the left must be {KEY_AFTER_QUESTION} and the right custom is {KEY_AFTER_ANSWER}.
+===============================================================================
 '''
 
-# ====================== Output section ====================== #
-def is_file_exist(file):
-    return os.path.isfile(file)
+HELP = fr'''
+---------------------------------------------------------------------------------------------
 
-def read_file_question(file_name):
-    if not is_file_exist(file_name):
-        exit(f'[-] File {file_name} not found!')
-    with open(file_name, 'r', encoding='utf8') as f:
-        return f.read()
+[*] Usage: python {sys.argv[0]} <Option number> <Question and answer in raw>
+    - Option 1: Parsing the question and answer which is have the format like flashcard. It will pass the key if duplicated.
+    - Option 2: Parsing the question have the multi-choice and answer is only character. It will pass the key if duplicated.
+    - Option 3: Swaping the position of question and answer.
+    - Option 4: Checking and removing key if each key in wrong form.
 
-# KEY SECTION #
-def read_key():
-    list_key, list_key_question, list_key_answer = [], [], []
-    if not is_file_exist(KEY_FILE):
-        open(KEY_FILE, 'w', encoding='utf8').close()
-        return list_key, list_key_question, list_key_answer
-    with open(KEY_FILE, 'r', encoding='utf8') as f:
-        lines = re.findall(r'(.+?)\n', f.read())
-    for line in lines:
-        list_key.append(line)
-        parts = line.split('|')
-        if len(parts) >= 2:
-            list_key_question.append(parts[0])
-            list_key_answer.append(parts[1])
-    return list_key, list_key_question, list_key_answer
+---------------------------------------------------------------------------------------------
 
-def write_key(new_keys):
-    with open(KEY_FILE, 'a', encoding='utf8') as f:
-        for position in new_keys:
-            f.write(position + '\n')
+* Option 1 and 2 will append to key.txt. Option 3 will not create any but it will overriden the file. Option 4 will create the similar file with extension (*.log)
 
-# ==================== Checking & Parsing ==================== #
-# === This section is child === #
-def parse_question(question):
-    parsing = re.sub(r'[\n]{1,}', ' ', question)
-    parsing = re.sub(r'[ ]{2,}', ' ', parsing)
-    parsing = re.sub(r'[|]{1,}', ' ', parsing)
-    parsing = re.sub(r'^[ \[]{0,1}[0-9a-zA-Z]{1,2}[.)\]]{1}[ ]{1}', '', parsing)
-    parsing = re.sub(r'[(cC ]{1,}hoose 1 answer[) ]{0,1}', '', parsing)
-    parsing = re.sub(r'[_]{1,}', '', parsing)
-    parsing = re.sub(r'^[tT]/[fF][ ]{0,2}', '', parsing)
-    parsing = re.sub(r'^[Marks ]{1,}:[ ]{1,}[0-9 ]{1,}', '', parsing)
-    parsing = re.sub(r'^[aA]{1}[(]{1}[n ]{1,}[)]{1}', '', parsing)
-    parsing = re.sub(r'("\(Choose 1 answer\) )', '', parsing, flags=re.I)
-    parsing = re.sub(r'(^"\d{1,}[).]{0,1}[ ]{0,1})', '', parsing)
-    parsing = re.sub(r'(^")', '', parsing)
-    parsing = re.sub(r'^Question[:]{0,1}[ ]{1,2}[0-9]{1,4}', '', parsing, flags=re.IGNORECASE)
-    parsing = re.sub(r'^[ ~:]{1,99}', '', parsing)
-    parsing = re.sub(r'^[0-9]{1,3}[)]{1}[ ]{1}', '', parsing)
-    parsing = re.sub(r'^[0-9]{1,4}[/. ]{1,3}', '', parsing)
-    parsing = re.sub(r'r[A-Z]{1,3}[=]{1,2}[0-9]{1,4}[ ]{0,1}', '', parsing)
-    parsing = re.sub(r'^[(]{1}[0-9]{1,9}[)]{1}[ ]{1}', '', parsing)
-    parsing = re.sub(r'^[aA_ ]{1,}', '', parsing)
-    parsing = re.sub(r'Select one or more', '', parsing, flags=re.I)
-    parsing = re.sub(r'Select one', '', parsing, flags=re.I)
-    parsing = re.sub(r'Choose one or more', '', parsing, flags=re.I)
-    parsing = re.sub(r'[( cC]{1,}hoose all that apply', '', parsing, flags=re.I)
-    parsing = re.sub(r'[ ]{0,1}[cC]hoose one', '', parsing, flags=re.I)
-    parsing = re.sub(r'[ ]{0,1}[cC]hoose two', '', parsing, flags=re.I)
-    parsing = re.sub(r'[ ]{0,1}[cC]hoose three', '', parsing, flags=re.I)
-    parsing = re.sub(r'Choose one answer[. ]{1,}', '', parsing, flags=re.I)
-    parsing = re.sub(r'[*: ]{1,2}$', '', parsing).replace('|', '')
-    parsing = re.sub(r'[_ .()]{1,}$', '', parsing)
-    parsing = re.sub(r'[*:]{1,2}[ ]{0,3}$', '', parsing).replace('|', '')
-    parsing = re.sub(r'[01]{1}/1', '', parsing)
-    parsed_question = re.sub(r'[ ]{2,}', ' ', parsing)
-    return parsed_question
+*** Export note: Custom on the left must be {SPLITQUESTION} and the right custom is {SPLITQA}.
 
-def parse_answer(answer):
-    parsing = re.sub(r'[|]{1,}', '', answer)
-    parsing = re.sub(r'^[a-zA-Z]{1}[.]{1}[ ]{0,1}', '', parsing)
-    return re.sub(r'^[- ]{1,}', '', parsing)
+'''
 
-def combine_to_key(question, answer, LIST_KEY):
-    key = parse_question(question) + '|' + parse_answer(answer)
-    if key in LIST_KEY:
-        key = ''
-    return key
 
-def parse_qa(raw_text):
-    QuestionAnswer = raw_text.split(KEY_AFTER_ANSWER)
-    QuestionAnswer.pop()
-    list_questions, list_answers = [], []
-    for QA in QuestionAnswer:
-        parts = QA.split(KEY_AFTER_QUESTION)
-        if len(parts) < 2:
-            continue  # skip malformed blocks missing the question delimiter
-        list_questions.append(parts[0])
-        list_answers.append(parts[1])
-    return list_questions, list_answers
+def remove_unwanted(sub):
+    sub = re.sub(r'[(cC ]{1,}hoose 1 answer[) ]{0,1}', '', sub)
+    sub = re.sub(r'[_]+', '', sub)
+    return sub
 
-# ==== Main Section Parsing ==== #
-def parse_raw_text(file_name):
-    raw_text = read_file_question(file_name)
-    raw_text = re.sub(r'[\n]{2,}', '\n', raw_text)
-    list_questions, list_answers = parse_qa(raw_text)
-    return list_questions, list_answers
 
-# ====================== Selection Type ====================== #
-# Type 1: Q&A, no selection
-def type1(question, answer, LIST_KEY):
-    key = combine_to_key(question, answer, LIST_KEY)
-    return key
-
-# Type 2: Q&A, selection choice
-def type2(question, answer, LIST_KEY):
-    main_question = re.sub(r'\n[a-gA-G][ .)/]{1,}.*', '', question).replace('\n', ' ')
-    keys = []
-    getAnswer = re.findall('\w', answer, re.I)
-    for choice in getAnswer:
-        getAnswerInQuestion = re.search(choice + r'[. )/\\]{1,}(.+?)[\n]|' + choice + r'[. )/\\]{1,}(.+?)$', question, re.I)
-        if getAnswerInQuestion is None:
-            continue  # choice letter not found in question options — skip
-        for arguments in getAnswerInQuestion.groups():
-            if arguments is not None:
-                key = combine_to_key(main_question, arguments, LIST_KEY)
-                keys.append(key)
-    return keys
-
-# Type 3: Wrong position, so swap them
-def type3(question, answer, LIST_KEY):
+def read_file(file_path):
+    existing_keys = set()
     try:
-        return type2(answer, question, LIST_KEY)
-    except Exception as e:
-        print(f'[!] type3 swap failed — {e}')
-        return []
-# Type 4: True/False type
-def type4(question, answer, LIST_KEY):
-    if re.match('true|false', answer, re.I) is None:
-        mapping_answer = {'t': 'true', 'T': 'true', 'f': 'false', 'F': 'false'}
-        answer = mapping_answer.get(answer, answer)  # fallback to original to avoid None
-    return combine_to_key(question, answer, LIST_KEY)
-# Need type_5, detect the multi question and answer is the answer, not A or B or C or D or etc..
-def type5(question, answer, LIST_KEY):
-    pass
+        with open('key.txt', 'r', encoding='UTF-8') as f:
+            content = f.read()
+        content = re.sub('[*]{3,99}', '', content)
+        content = re.sub('[~]{3,99}', '', content)
+        for line in content.strip().split('\n'):
+            line = line.strip()
+            if line:
+                existing_keys.add(line)
+    except FileNotFoundError:
+        pass
+
+    raw_list = []
+    try:
+        with open(file_path, 'r', encoding='UTF-8') as f:
+            raw_list = f.read().split(SPLITQA)
+        if raw_list:
+            raw_list.pop()
+    except IOError:
+        print('[-] Error while opening files.')
+    return existing_keys, raw_list
 
 
-# Detector
-def detector(question, answer): # Not checked already, not sure if it works
-    if (len(question) <= 4):
-        return 3
-    elif (question.count('\n') >= 3 and len(answer) <=4):
-        return 2
-    elif (question.count('\n') == 0):
-        return 1
-    check_true_false = re.sub(r'\s{1,}', '', answer).lower()
-    if 't' ==  check_true_false or 'f'== check_true_false or check_true_false == 'true' or check_true_false == 'false':
-        return 4
-    check_type_5 = re.sub(r'[a-gA-G][,.)/\\ ]{1,}', '', answer)
-    if check_type_5 in question:
-        return 5
-    return -1
+def parse_question_type1(existing_keys, raw_list):
+    final_list = []
+    for item in raw_list:
+        cleaned = item.replace('\n', ' ').replace('  ', ' ')
+        parts = cleaned.split(SPLITQUESTION)
+        if len(parts) < 2:
+            continue
+        question = parts[0]
+        question = remove_unwanted(question)
+        question = re.sub(r'^[# ]{1,2}', '', question)
+        question = re.sub(r'^[tT]/[fF][ ]{0,2}', '', question)
+        question = re.sub(r'^[_]+[ ]?', '', question)
+        question = re.sub(r'^[0-9]{1,3}[.) ]{1,3}', '', question)
+        question = re.sub(r'^[a-z]{1,2}=[0-9]{1,3}[ ]{1,2}', '', question, flags=re.IGNORECASE)
+        question = re.sub(r'^[a _]+', '', question, flags=re.I)
+        question = re.sub(r'[|]+', '', question)
+        question = re.sub(r'[ :.,]+$', '', question)
+        answer = parts[1]
+        answer = re.sub(r'[|]+', '', answer)
+        answer = re.sub(r'^[a-zA-Z]\. ?', '', answer)
+        answer = re.sub(r'^[- ]+', '', answer)
+        question = re.sub(r'[_]+[ .]?$', '', question)
+        answer = re.sub(r'[ :.,]+$', '', answer)
+        key_parsed = question + '|' + answer
+        if question and answer and key_parsed not in existing_keys:
+            final_list.append(key_parsed + '\n')
+            existing_keys.add(key_parsed)
+    return final_list
 
-# Automation select the correct type
-def select_type(file_name):
-    key = ''
-    new_keys_list = []
-    LIST_KEY, list_key_question, list_key_answer = read_key()
-    list_questions, list_answers = parse_raw_text(file_name)
-    for i in range(len(list_questions)):
-        numberic_type = detector(list_questions[i], list_answers[i])
-        if numberic_type == 1:
-            key = type1(list_questions[i], list_answers[i], LIST_KEY)
-        elif numberic_type == 2:
-            key = type2(list_questions[i], list_answers[i], LIST_KEY)
-        elif numberic_type == 3:
-            key = type3(list_questions[i], list_answers[i], LIST_KEY)
-        elif numberic_type == 4:
-            key = type4(list_questions[i], list_answers[i], LIST_KEY)
+
+def parse_text_type1(file_path):
+    existing_keys, raw_list = read_file(file_path)
+    return parse_question_type1(existing_keys, raw_list)
+
+
+def parse_question_type2(questions):
+    sub = re.sub(r'^[ \[]{0,1}[0-9a-zA-Z]{1,2}[.)\]]{1}[ ]{1}', '', questions.replace('  ', ' ').replace('|', ''))
+    sub = remove_unwanted(sub)
+    sub = re.sub(r'^[tT]/[fF][ ]{0,2}', '', sub)
+    sub = re.sub(r'^[Marks ]{1,}:[ ]{1,}[0-9 ]{1,}', '', sub)
+    sub = re.sub(r'^[aA][(][n ]+[)]', '', sub)
+    sub = re.sub(r'("\(Choose 1 answer\) )', '', sub, flags=re.I)
+    sub = re.sub(r'(^"\d{1,}[).]{0,1}[ ]{0,1})', '', sub)
+    sub = re.sub(r'(^")', '', sub)
+    sub = re.sub(r'^Question[:]{0,1}[ ]{1,2}[0-9]{1,4}', '', sub, flags=re.IGNORECASE)
+    sub = re.sub(r'^[ ~:]{1,99}', '', sub)
+    sub = re.sub(r'^[0-9]{1,3}[)]{1}[ ]{1}', '', sub)
+    sub = re.sub(r'^[0-9]{1,4}[/. ]{1,3}', '', sub)
+    sub = re.sub(r'^[A-Z]{1,3}[=]{1,2}[0-9]{1,4}[ ]?', '', sub)
+    sub = re.sub(r'^[(][0-9]{1,9}[)][ ]', '', sub)
+    sub = re.sub(r'^[aA_ ]+', '', sub)
+    sub = re.sub(r'Select one or more', '', sub, flags=re.I)
+    sub = re.sub(r'Select one', '', sub, flags=re.I)
+    sub = re.sub(r'Choose one or more', '', sub, flags=re.I)
+    sub = re.sub(r'[( cC]{1,}hoose all that apply', '', sub, flags=re.I)
+    sub = re.sub(r' ?[cC]hoose one', '', sub, flags=re.I)
+    sub = re.sub(r' ?[cC]hoose two', '', sub, flags=re.I)
+    sub = re.sub(r' ?[cC]hoose three', '', sub, flags=re.I)
+    sub = re.sub(r'Choose one answer[. ]+', '', sub, flags=re.I)
+    sub = re.sub(r'[*: ]{1,2}$', '', sub).replace('|', '')
+    sub = re.sub(r'[_ .()]+$', '', sub)
+    sub = re.sub(r'[*:]{1,2}[ ]{0,3}$', '', sub).replace('|', '')
+    sub = re.sub(r'[01]/1', '', sub).replace('  ', ' ')
+    return sub
+
+
+def parse_question_type4(line):
+    line = re.sub(r'^[TF/ ]{4}', '', line)
+    line = re.sub(r'("(Choose 1 answer) )', '', line)
+    line = re.sub(r'(^"\d{1,}[).]{0,1}[ ]{0,1})', '', line)
+    line = re.sub(r'(^")', '', line)
+    line = re.sub(r'^[Marks ]{1,}:[ ]{1,}[0-9 ]{1,}', '', line)
+    line = re.sub(r'^[_]+[ ]?', '', line)
+    line = re.sub(r'^[a-zA-Z]{2,3}[=]{1,2}[0-9 ]{1,5}', '', line)
+    line = re.sub(r'^questions?:?[ ]{1,2}[0-9]{1,4}', '', line, flags=re.I)
+    line = re.sub(r'^[(][0-9]{1,9}[) ]{1,3}', '', line)
+    line = re.sub(r'^[#~: ]{1,4}', '', line)
+    line = re.sub(r'^[0-9]{1,4}[/). ]{1,2}', '', line)
+    line = re.sub(r'^[ ]+', '', line)
+    line = re.sub(r'[(]?Choose one answer[)]?[. ]+', '', line, flags=re.I)
+    line = re.sub(r'[*,: ]{1,2}[|]', '|', line)
+    line = re.sub(r'[|][ ]+', '|', line)
+    line = re.sub(r'[ ]{2,}', ' ', line)
+    line = re.sub(r'[ (]{1,2}[*][) ]{1,2}[|]', '|', line)
+    line = re.sub(r'[. ]+$', '', line)
+    return line
+
+
+def type2_first_parse(raw_list):
+    answers = []
+    questions = []
+    question_answer = []
+    for item in raw_list:
+        parts = item.split(SPLITQUESTION)
+        if len(parts) < 2:
+            continue
+        q = parts[0].replace('\n\n', '\n').replace('  ', ' ')
+        a = item.replace('\n', '').replace(' ', '').split(SPLITQUESTION)[1].lower()
+        a = re.sub(r'[.][ ]?.*$', '', a)
+        a = re.sub(r'"[ .]*$', '', a)
+        for_regex = re.split(r'[\n\[ ][a-gA-G][,.)\]][ ]?', q, flags=re.I)
+        questions.append(for_regex[0].replace('\n', ' '))
+        question_answer.append(for_regex)
+        answers.append(a.lower())
+    return questions, question_answer, answers
+
+
+def parse_text_type2(file_path):
+    answer_after_parse = []
+    error_list = []
+    pos = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 't': 'True', 'f': 'False'}
+    bool_check = {'a': 'True', 'b': 'False', 't': 'True', 'f': 'False'}
+
+    existing_keys, raw_list = read_file(file_path)
+    questions, question_answer, answers = type2_first_parse(raw_list)
+    final_list = []
+
+    for i in range(len(question_answer)):
+        position = pos.get(answers[i])
+        try:
+            if position not in ('True', 'False'):
+                if 'True B. False' in question_answer[i][position]:
+                    answer_after_parse.append('True')
+                else:
+                    answer_after_parse.append(question_answer[i][position].replace('\n', ' '))
+            else:
+                answer_after_parse.append(position)
+        except (IndexError, TypeError):
+            answer_after_parse.append(bool_check.get(answers[i], ''))
+
+    for i in range(len(questions)):
+        sub = parse_question_type2(questions[i])
+        try:
+            string_a = re.sub(r'[ ".]+$', '', answer_after_parse[i])
+            if sub.strip() and string_a.strip():
+                key_parsed = sub + '|' + string_a
+                if key_parsed not in existing_keys:
+                    final_list.append(key_parsed + '\n')
+                    existing_keys.add(key_parsed)
+        except (IndexError, TypeError):
+            if len(answers[i]) > 2:
+                key_parsed = sub + '|' + answers[i]
+                if key_parsed not in existing_keys:
+                    final_list.append(key_parsed + '\n')
+                    existing_keys.add(key_parsed)
+            else:
+                error_list.append(sub + '|')
+    return final_list, error_list
+
+
+def type3(file_path):
+    with open(file_path, 'r', encoding='UTF-8') as f:
+        content = f.read()
+    content = re.sub('[*]{3,}', '', content)
+    content = re.sub('[~]{3,}', '', content)
+    arguments = content.split(SPLITQA)
+    if arguments:
+        arguments.pop()
+    count = 0
+    skipped = 0
+    with open(file_path, 'w', encoding='UTF-8') as f:
+        for item in arguments:
+            parts = item.split(SPLITQUESTION)
+            if len(parts) < 2:
+                skipped += 1
+                continue
+            f.write(parts[1] + SPLITQUESTION + parts[0] + SPLITQA)
+            count += 1
+    print(f'\n[+] Overrided position of {count} lines into File: {file_path}')
+    if skipped:
+        print(f'[!] Skipped {skipped} malformed entries (missing delimiter).')
+
+
+def type4(file_path):
+    count = 0
+    form_errors = 0
+    key_list = []
+
+    with open(file_path, 'r', encoding='UTF-8') as f:
+        content = f.read()
+    content = re.sub(r'[ ]+\n', '\n', content)
+    lines = content.split('\n')
+    if lines and lines[-1] == '':
+        lines.pop()
+
+    for line in lines:
+        parts = line.split('|')
+        if len(parts) >= 2 and parts[0].strip() and parts[1].strip():
+            key_list.append(line + '\n')
         else:
-            ERROR_LIST.append(list_questions[i]+'|'+list_answers[i])
-        # Check if not duplicated
-        # Checking key, if key = list so use for loop, otherwise, use below syntax  ============ IMPORTANT =============
-        if key:
-            if numberic_type == 1 or numberic_type == 4:
-                new_keys_list.append(key)
-            elif numberic_type == 2 or numberic_type == 3:
-                for entry in key:
-                    new_keys_list.append(entry)
-    write_key(new_keys_list)
-    if ERROR_LIST:
-        print(f'[!] {len(ERROR_LIST)} entries could not be parsed.')
+            print(f'[-] Wrong format: {line}')
+            form_errors += 1
 
-def check_input_from_command():
-    if len(sys.argv) != 2:
-        exit(HELP)
-    arg = sys.argv[1]
-    if arg in ('-h', '--help', 'help') or not is_file_exist(arg):
-        if not is_file_exist(arg) and arg not in ('-h', '--help', 'help'):
-            print(f'[-] File "{arg}" not found!\n\n'
-                  f'=============================================================================')
-        exit(HELP)
+    with open(file_path + '.log', 'w', encoding='UTF-8') as f:
+        for item in key_list:
+            item = parse_question_type4(item.replace('  ', ' '))
+            f.write(item)
+            count += 1
 
-# ============================ Main =========================== #
+    print(f'\n[+] Overrided {count} keys and {form_errors} key(s) in wrong form.')
+
+
 if __name__ == '__main__':
-    os.system('cls' if os.name == 'nt' else 'clear')
+    start = time.time()
     print(BANNER)
-    check_input_from_command()
-    select_type(sys.argv[1])
+
+    if len(sys.argv) != 3:
+        exit(HELP)
+
+    option = sys.argv[1]
+    input_file = sys.argv[2]
+
+    if not os.path.isfile(input_file):
+        exit(f'[-] File "{input_file}" not found!')
+
+    if option == '2':
+        final_list, errors = parse_text_type2(input_file)
+        for err in errors:
+            print(err)
+        with open('key.txt', 'a', encoding='UTF-8') as f:
+            for key in final_list:
+                f.write(key)
+        print(f'\n[+] Errors total: {len(errors)}')
+        print(f'[+] Keys total wrote to file: {len(final_list)}')
+
+    elif option == '1':
+        final_list = parse_text_type1(input_file)
+        with open('key.txt', 'a', encoding='UTF-8') as f:
+            for key in final_list:
+                f.write(key)
+        print(f'\n[+] Keys total wrote to file: {len(final_list)}')
+
+    elif option == '3':
+        type3(input_file)
+
+    elif option == '4':
+        type4(input_file)
+
+    else:
+        exit('[-] Option not found!' + HELP)
+
+    print('-------------------------------------------------------------')
+    elapsed = time.time() - start
+    print(f'Program executed in {elapsed:.4f} seconds')
